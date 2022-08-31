@@ -173,7 +173,7 @@ station_plot
 
 The local newspaper in Pakistan, _Dawn_, claims that the government is misreporting the air pollution levels in Lahore. Do the locations of monitors in question 4, relative to crowd-sourced monitors, suggest anything about a possible political bias?/
 
-* When the monitors are plotted, it clearly displays that the government monitors are clustered closely together. The air quality data these monitors collect are not representative of the air quality throughout the city and surrounding urban area. They are clustered around the city's main railway station and within 3 km of the town hall and city government offices. This does indicate a possible political bias. The government air quality monitors are also conviently located near government official's offices. 
+* When the monitors are plotted, it clearly displays that the government monitors are clustered closely together. The air quality data these monitors collect are not representative of the air quality throughout the city and surrounding urban area. They are clustered around the city's main railway station and within 3 km of the town hall and city government offices. This does indicate a possible political bias. The government air quality monitors are also conveniently located near government official's offices. 
 
 ## Question 6:
 
