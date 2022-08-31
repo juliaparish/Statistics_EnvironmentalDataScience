@@ -1,0 +1,525 @@
+---
+title: "EDS 222: Assignment 03 (due: Oct 18, 5pm)"
+author: "Julia Parish"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+# Load all the packages needed here
+library(tidyverse)
+library(tidymodels)
+library(readr)
+library(gt)
+library(tufte)
+library(kableExtra)
+library(palmerpenguins)
+library(here)
+library(paletteer)
+library(scales)
+
+```
+
+
+# Question 1: Some math with Ordinary Least Squares
+
+We will rely on `R` to implement all the heavy lifting of OLS, but it's essential that you understand what is happening beneath the hood of canned linear regression commands so that you can accurately design, execute, and interpret regressions. These questions ask you to probe the algebra of least squares so that you can see some of the mechanics behind `lm()` and other linear regression packages in `R` and beyond. 
+
+## Question 1.1 
+
+In class, I claimed that the OLS regression line will always pass through the sample means, $(\bar x, \bar y)$. Desik rightly asked for proof. Now's your chance to prove it! 
+
+Prove that this claim holds. That is, use the definition of a sample mean, an OLS residual, and an OLS prediction to show that the predicted value of $\bar x$ using the OLS intercept and slope parameters is exactly $\bar y$.
+
+Hint: start with the definition of the sample mean of $y$, and do some substitution relying on the fact that $e_i = y_i - \hat y_i$ and $\hat y_i = \hat\beta_0 + \hat\beta_1 x_i$. 
+
+**Answer**\
+We are trying to prove $\bar{x},\bar{y}$ is on the regression line and show $\bar{y} = \hat\beta_0 + \hat\beta_1\bar{x}$
+
+**Step 1)** We have ($\bar{x},\bar{y}$)
+
+**Step 2)** The sample mean of y is $\bar{y} = \frac{\sum y_i}{n}$ or $\bar{y} = \frac{1}{n}\overset{n}{\sum_i}{yi}$ and $\bar{x} = \frac{1}{n}\overset{n}{\sum_i}{x_i}$\
+
+**Step 3)** We know that $Y_i$ is our predicted value ($\hat\beta_0$) + the fitted residual ($\hat\beta_1{xi} + \hat{u}_i$) and that this equation is true for any value of `i`.\
+
+**Step 4)** Since the equation is true for any value of `i`, we could write equations for all the `i` values. For example:
+
+$Y_{1} = \hat\beta_0 + \hat\beta_1{x_1} + \hat{u}_1$\
+$Y_{2} = \hat\beta_0 + \hat\beta_2{x_2} + \hat{u}_2$\
+$Y_{3} = \hat\beta_0 + \hat\beta_3{x_3} + \hat{u}_3$\
+.\
+.\
+.\
+to $Y_{n} = \hat\beta_0 + \hat\beta_n{x_n} + \hat{u}_n$. We could add all these equations together, which would be written as $\overset{n}{\sum}{Y_i}$ = $n * \hat\beta_0 + (\hat\beta_1 * \overset{n}{\sum}x_i + \overset{n}{\sum}\hat{u_i}$ or 
+$\overset{n}{\sum}{Y_i}$ = $n * \hat\beta_0 + (\hat\beta_1 * \overset{n}{\sum}x_i$ as $\overset{n}{\sum}\hat{u_i} = 0$.
+ 
+**This equation written out in words is:**\
+The sum of $Y_1$ to $Y_n$ of $Y_i$ is equal to `n` * $\hat\beta_0$ plus $\hat\beta_1$ multiplied by the sum of all Xs ($x_1, x_2, ... x_n$) plus the sum of the residuals, $\overset{n}{\sum}\hat{u_i}$. The sum of $\overset{n}{\sum}\hat{u_i}$ has to equal `0` due to the conditions of optimality. 
+
+**Step 5)** Once we have the equation: $\overset{n}{\sum}{Y_i}$ = $n * \hat\beta_0 + \hat\beta_1 * \overset{n}{\sum}x_i$, we need to divide both sides by `n`.\
+
+$\frac{{{\sum}^{n}{Y_i}}}{n}$ = $\frac{n * \hat{\beta_0}}{n} + \frac{hat\beta_1 * \overset{n}{\sum}x_i}{n}$
+
+**Step 6)** The `n` cancel out in $\frac{n * \hat{\beta_0}}{n}$ leaving:\
+$\bar{y} = \hat\beta_0 + \hat\beta_1\bar{x}$
+
+
+
+## Question 1.2 
+
+Consider a simple linear regression model:
+
+$$y_i = \beta_0 + \beta_1 x_i + u_i$$
+Recall the definitions of the OLS estimate of the intercept and slope coefficients:
+
+$$\hat{\beta}_1 = \dfrac{\sum_i (x_i - \overline{x})(y_i - \overline{y})}{\sum_i (x_i - \overline{x})^2} = \frac{cov(x,y)}{var(x)}$$
+
+$$ \hat{\beta}_0 = \overline{y} - \hat{\beta}_1 \overline{x} $$
+Using these definitions, show mathematically how $\hat\beta_0$ and $\hat\beta_1$ change under the following scenarios:^[Note that these kinds of scenarios occur in practice all the time when we change units of measurement.]
+
+- All observations of the independent variable are multiplied by 3 
+
+- All observations of the dependent variable are multiplied by 3 
+
+- All observations of both the independent and dependent variables are multiplied by 3 
+
+Give some intuition for your answers. If your answers differ across scenarios, why do they? If not, why not?
+
+**Answers**
+* I used the Palmer Penguins data set to show these scenarios as well. The data is set to have body mass as a function of bill length for Adelie penguins. 
+
+- All observations of the independent variable are multiplied by 3 
+$\hat\beta_1 = \frac{cov(3x,y)}{var3x} = \frac{3cov(x,y)}{3^{2}var(x)} = \frac{1}{3}\frac{cov(x,y)}{var(x)}$  
+$\hat\beta_0 = \bar{y} - \frac{1}{3}\hat\beta_13\bar{x} = \bar{y} - \hat\beta_1\bar{x}$
+
+- All observations of the dependent variable are multiplied by 3 
+$\hat\beta_1 = \frac{cov(x,3y)}{varx} = 3\frac{cov(x,y)}{var(x)}$  
+$\hat\beta_0 = 3\bar{y} - 3\hat\beta_1\bar{x} = 3(\bar{y} - \hat\beta_1\bar{x})$
+
+- All observations of both the independent and dependent variables are multiplied by 3
+$\hat\beta_1 = \frac{cov(3x,3y)}{var3x} = 3*3\frac{3cov(x,y)}{3^{2}var(x)} = \frac{cov(x,y)}{var(x)}$  
+$\hat\beta_0 = 3\bar{y} - \hat\beta_13\bar{x} = 3(\bar{y} - \hat\beta_1\bar{x})$
+
+
+```{r penguin data}
+penguins <- penguins
+
+adelies <- penguins %>% 
+  filter(species == "Adelie") %>% 
+  mutate(body_mass_kg = body_mass_g / 1000) %>% 
+  relocate(body_mass_kg, .before = body_mass_g) %>% 
+  drop_na(bill_length_mm, body_mass_kg)
+```
+
+```{r}
+cor_body_bill <- adelies %>% 
+  summarize(body_bill = cor(body_mass_kg, bill_length_mm)) %>% 
+  kable()
+# 0.549
+
+cor_bill_ld <- adelies %>% 
+  summarize(length_depth = cor(bill_length_mm, bill_depth_mm)) %>% 
+  kable()
+# 0.391
+
+cor_flipper_body <- adelies %>% 
+  summarize(flipper_bodykg = cor(body_mass_kg, flipper_length_mm)) %>% 
+  kable()
+# 0.468
+
+```
+
+```{r lm body_bill}
+# body mass is the dependent variable, bill length is independent variable
+
+body_bill <- lm(body_mass_kg ~ bill_length_mm, data = adelies) %>% 
+                    tidy
+
+body_bill_table <- knitr::kable(body_bill,
+                              col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                              caption = "Linear Regression: Adelie Penguin Body Mass(kg) in Relationship to Bill Length(mm)")
+
+body_bill_table
+```
+* This linear regression allows for the quantification of the relationship of body mass of the Adelie penguin to its bill length $bodymass_i=\beta_{0}+\beta_{1} \cdot billlength_i +\varepsilon_i$
+* $\hat\beta_0$ = 0.035 
+* $\hat\beta_1$ = 0.094
+
+* The body mass of an Adelie penguin would be 0.035kg if the bill length was 0 mm. 
+
+```{r plot body_bill, message=FALSE}
+body_bill_plot <- ggplot(data = adelies) +
+                  geom_point(aes(x = bill_length_mm, y = body_mass_kg), color = "goldenrod1") +
+                  geom_smooth(aes(x = bill_length_mm, y = body_mass_kg), color = "#834BA4",
+              method = "lm", formula = "y~x", se= F) +
+                  labs(title = "Adelie Penguin Body Mass in Relationship to Bill Length",
+                      subtitle = "Initial Regression",
+                      x = "Bill Length (mm)",
+                      y = "Body Mass (kg)") +
+  theme_minimal()
+
+body_bill_plot
+```
+
+```{r bill*3}
+bill_3 <- adelies %>% 
+  mutate(bill_length_mm3 = bill_length_mm * 3) %>% 
+  relocate(bill_length_mm3, .after = bill_length_mm)
+```
+
+
+```{r independent3}
+independent_bill3 <- lm(body_mass_kg ~ bill_length_mm3, data = bill_3) %>% 
+                    tidy
+
+independent_bill3_table <- knitr::kable(independent_bill3,
+                              col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                              caption = "Adelie Penguin Body Mass(kg) in Relationship to Bill Length(mm) * 3")
+
+independent_bill3_table
+```
+```{r, echo=FALSE, message=FALSE}
+#cov(bill_3$body_mass_kg, bill_3$bill_length_mm3)
+
+#var(bill_3$bill_length_mm3)
+
+```
+* When multiplying the independent variable, which is bill length, in this example, by 3, the $\hat\beta_0$ stays the same at 0.035 and $\hat\beta_1$, or the slope, changes from 0.094 to 0.031. The bill length values increased on the x-axis. 
+
+
+```{r plot independent3}
+independent3_plot <- ggplot(data = bill_3) +
+                  geom_point(aes(x = bill_length_mm3, y = body_mass_kg), 
+                             color = "goldenrod1") +
+                  geom_smooth(aes(x = bill_length_mm3, y = body_mass_kg),
+                              color = "#834BA4",
+              method = "lm", formula = "y~x", se= F) +
+                  labs(title = "Adelie Penguin Body Mass in Relationship to Bill Length * 3",
+                      subtitle = "Independent Variable * 3",
+                      x = "Bill Length (mm) * 3",
+                      y = "Body Mass (kg)") +
+  theme_minimal()
+
+independent3_plot
+```
+
+```{r}
+body_3 <- adelies %>% 
+  mutate(body_mass_kg3 = body_mass_kg * 3) %>% 
+  relocate(body_mass_kg3, .after = body_mass_kg)
+```
+
+
+```{r dependent body3}
+dependent_body3 <- lm(body_mass_kg3 ~ bill_length_mm, data = body_3) %>% 
+                    tidy
+
+dependent_body3_table <- knitr::kable(dependent_body3,
+                              col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                              caption = "Adelie Penguin Body Mass(kg) *3 in Relationship to Bill Length(mm)")
+
+dependent_body3_table
+```
+
+* When multiplying the dependent variable, which is body mass in this example, by 3, the $\hat\beta_0$ shifted from 0.035 to 0.105 and $\hat\beta_1$ changed from the original slope of 0.094 to 0.283.
+
+```{r}
+dependent3_plot <- ggplot(data = body_3) +
+                  geom_point(aes(x = bill_length_mm, y = body_mass_kg3), 
+                             color = "goldenrod1") +
+                  geom_smooth(aes(x = bill_length_mm, y = body_mass_kg3),
+                              color = "#834BA4",
+              method = "lm", formula = "y~x", se= F) +
+                  labs(title = "Adelie Penguin Body Mass *3 in Relationship to Bill Length",
+                      subtitle = "Dependent Variable * 3",
+                      x = "Bill Length (mm)",
+                      y = "Body Mass (kg) *3") +
+  theme_minimal()
+
+dependent3_plot
+```
+```{r bodybill3}
+body3_bill3 <- cbind(bill_3, body_3[c("body_mass_kg3")]) %>% 
+  relocate(body_mass_kg3, .after = "body_mass_kg")
+
+```
+
+```{r lm table bodybill3}
+lm3 <- lm(body_mass_kg3 ~ bill_length_mm3, data = body3_bill3) %>% 
+                    tidy
+
+lm3_table <- knitr::kable(lm3,
+                          col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                          caption = "Adelie Penguin Body Mass(kg) *3 in Relationship to Bill Length(mm) *3")
+
+lm3_table
+```
+
+* When multiplying the both the independent and dependent variables by 3, the $\hat\beta_0$ shifts from the original intercept value of 0.035 to 0.105 and $\hat\beta_1$ stays the same as the original slope value of 0.094.
+
+
+```{r}
+lm3_plot <- ggplot(data = body3_bill3) +
+                  geom_point(aes(x = bill_length_mm3, y = body_mass_kg3), 
+                             color = "goldenrod1") +
+                  geom_smooth(aes(x = bill_length_mm3, y = body_mass_kg3),
+                              color = "#834BA4",
+              method = "lm", formula = "y~x", se= F) +
+                  labs(title = "Adelie Penguin Relationship: Body Mass to Bill Length",
+                      subtitle = "Both Variables * 3",
+                      x = "Bill Length (mm) *3",
+                      y = "Body Mass (kg) *3") +
+              theme_minimal()
+
+lm3_plot
+```
+
+
+# Question 2: Water demands of agriculture
+
+The data provided for this assignment, called `GRACE_water_irrigation.Rds`, represent measures of changes in total water availability (called "water storage" in these data) over a subset of Earth’s surface, as measured by the GRACE satellite and modeled by the GSFC Mascon product (see [here]( https://earth.gsfc.nasa.gov/geo/data/grace-mascons) for details). Each observation corresponds to one equal area grid cell, where grid cells are approximately 12,500 square kilometers. This subset of the full dataset only contains grid cells that have some observed agricultural irrigation contained within them. 
+
+The README provided alongside these data contain details on each variable.
+
+## Question 2.1
+
+```{r}
+# read in the Grace water irrigation data
+
+water_data <- read_rds(here("data", "GRACE_water_irrigation.Rds"))
+
+#water_data %>% glimpse() # view data frame
+```
+
+- Make a scatterplot showing changes in water storage ($y$-axis) as it relates to irrigated area ($x$-axis) and discuss the general relationship. Do you see a positive or negative correlation? Does that make intuitive sense to you? How strong does the correlation appear to be?
+```{r}
+water_storage <- water_data$trend_water_storage
+pct_irrigation <- water_data$pct_irrigated
+
+cor_h2oirr <- cor(pct_irrigation, water_storage)
+
+```
+
+```{r}
+span <- 0.9
+
+water_storage_plot <- ggplot(data = water_data) +
+                  geom_point(aes(x = pct_irrigated, y = trend_water_storage),                            color = "#2B3588") +
+                  geom_smooth(span = span, aes(x = pct_irrigated, y = trend_water_storage), color = "#25C10B") +
+                  labs(title = "Water Availability and Agricultural Irrigation",
+                      x = "% Irrigated for Agricultural Production ",
+                      y = "Water Storage (cm ewh/month)") +
+  theme_minimal()
+
+water_storage_plot 
+```
+
+**Answer**
+
+* There is a slight negative correlation of changes in water storage as it relates to the percent of irrigated area. The correlation coefficient of water storage and percent of irrigated area is `r cor_h2oirr``. Since it is closer to -1, we can conclude that the variables are negatively linearly related.
+
+- You probably see a lot of overlapping points on your scatterplot, making it hard to see the distribution of the data clearly. This kind of plot indavertendly draws attention to outliers, instead of to the majority of your data. To remedy this, try the following two graphs:
+
+Remake your scatterplot, but use the `alpha` option in your `geom_point()` command to make each dot partially transparent. This allows the reader to see where data density is relatively high versus low.
+
+```{r scatterplot}
+water_alpha_plot <- ggplot(data = water_data) +
+                  geom_point(aes(x = pct_irrigated, y = trend_water_storage), color = "#2B3588", alpha = 0.3) +
+                  # geom_smooth(span = span, aes(x = pct_irrigated, y = trend_water_storage), color = "#25C10B") +
+                  labs(title = "Water Availability and Agricultural Irrigation",
+                       subtitle = "Alpha = 0.3",
+                      x = "% Irrigated for Agricultural Production ",
+                      y = "Water Storage (cm ewh/month)") +
+  theme_minimal()
+
+water_alpha_plot 
+```
+
+Instead of a scatterplot, make a 2-dimensional density plot, which will show the joint distribution of your data across these two variables. You can do this using `geom_bin2d()` with `ggplot`.
+
+
+```{r density plot}
+
+density_plot <- ggplot(water_data, aes(x = pct_irrigated, y = trend_water_storage) ) +
+  geom_bin2d(bins = 70) +
+  scale_fill_continuous(type = "viridis") +
+  labs(title = "Water Availability and Agricultural Irrigation",
+                       subtitle = "2D Density Plot",
+                      x = "% Irrigated for Agricultural Production ",
+                      y = "Water Storage (cm ewh/month)") +
+  theme_minimal()
+
+density_plot
+```
+
+## Question 2.2
+
+Use the `lm()` command to estimate the following simple linear regression:
+
+$$ \text{trend in water storage}_i = \beta_0 + \beta_1 \text{percent of land irrigated}_i + \varepsilon_i $$
+Display your estimated intercept and slope coefficients using `summary()`, `gt()`, or `kable()`. Interpret each coefficient in words, and then answer the following:
+
+```{r lm water}
+water_lm <- lm(trend_water_storage ~ pct_irrigated, data = water_data) %>% tidy 
+
+water_lm_table <- knitr::kable(water_lm, 
+                               col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                              caption = "Trend of Water Storage to percent of Agricultural Land Irrigated")
+
+water_lm_table
+```
+
+- How much water do you predict will be lost (or gained) per month in a grid cell that is only 1% irrigated?
+
+**Answer**
+
+* For every 1% increase in agricultural land irrigated, there is a correlated -0.0018% decrease in water storage loss.
+
+$$ \beta_0 = -0.003627$$
+$$ \beta_1 = -0.001785$$ 
+
+$$ \text{trend in water storage}_i = \beta_0 + \beta_1{.01} + \varepsilon_i $$
+$$ 0.00364485\text{cm ewh/mth} = -0.003627 + (-0.001785 * 0.01) $$
+* For a grid cell that is 1% irrigated, there will be a **0.0036 cm ewh/month** gain in water storage.
+
+- How much water do you predict will be lost (or gained) per month in a grid cell that is 80% irrigated?
+
+**Answer**
+$$ -0.0022 \text{cm ewh/mth} = -0.003627 + (-0.001785 * 0.80) $$
+* For a grid cell that is 80% irrigated, there will be a **0.0022 cm ewh/month** loss in water storage.
+
+- How much water do you predict will be lost (or gained) per month in a grid cell in which irrigation expands from 10% to 75%? 
+
+**Answer**
+$$ -0.00478725 \text{cm ewh/mth} = -0.003627 + (-0.001785 * 0.65) $$
+
+* For a grid cell that expands from 10% to 75% irrigated, there will be a **0.0048 cm ewh/month** loss in water storage.
+
+
+## Question 2.3 
+
+The `pct_irrigated` variable covers a range of zero to 100 (units: percent of grid cell that is irrigated). Based on the math you showed in Question 1.2, how do you expect your coefficients to change if you rescale this variable to cover the range zero to 1 (units: fraction of grid cell that is irrigated).
+
+Implement this rescaling and show your new coefficients. Does your math align with your new coefficients? 
+
+```{r rescale}
+
+water_rescaled <- water_data %>%
+                    mutate(pct_irrigated_rescaled = pct_irrigated/100)
+
+```
+
+```{r}
+wtr_scaled_lm <- lm(trend_water_storage ~ pct_irrigated_rescaled, data = water_rescaled) %>% 
+  tidy
+
+wtr_scaled_lm_table <- knitr::kable(wtr_scaled_lm, 
+                               col.names = c('Regression Term', 'Estimated Value', 'Standard Error', 'T-Statistic', 'P-value'),
+                              caption = "Normalized Trend of Water Storage to percent of Agricultural Land Irrigated")
+
+wtr_scaled_lm_table
+```
+**Answer**
+
+* The `pct_irrigated` variable was normalized using Min-Max scaling so that the observations range between 0 and 1. The $$ \beta_0 $$ remained the same. $$ \beta_1 $$, or slope, increased. 
+
+$$ \beta_0 = -0.003627$$
+$$ \beta_1 = -0.17855$$ 
+
+## Question 2.4
+    
+Using your original regression model with the original `pct_irrigated` variable, use `geom_smooth()` in `ggplot()` to visualize your regression line, overlaid on your scatterplot. Use `se=FALSE` to suppress standard errors; we will dig into those soon!
+
+```{r plot pct_irrigated}
+water_plot <- ggplot(data = water_data) +
+                  geom_point(aes(x = pct_irrigated, y = trend_water_storage), color = "#2B3588", alpha = 0.3) +
+                  geom_smooth(aes(x = pct_irrigated, 
+                                  y = trend_water_storage),
+                              color = "#25C10B", 
+                              method = "lm", 
+                              formula = "y~x", 
+                              se= F) +
+                  labs(title = "Water Availability and Agricultural Irrigation",
+                       subtitle = "Linear Regression",
+                      x = "% Irrigated for Agricultural Production ",
+                      y = "Water Storage (cm ewh/month)") +
+  theme_minimal()
+
+water_plot
+```
+
+How well do you think your model is fitting the data?
+* There is a negative correlation with a lot of residuals. Observing the regression line, this model may not be the best fit as it is heavily influenced by heteroskedastic residuals at 0%.  
+
+```{r}
+# the percent of irrigated ag land affects water storage:
+
+lmfit <- lm(trend_water_storage ~ pct_irrigated, data = water_data)
+
+summary(lmfit)
+
+```
+
+Compute the coefficient of determination ($R^2$), or report it based on the regression results you saved above. What percent of variation in water storage trends are explained by irrigation? Does this align with your intuition based on the scatterplot?
+
+```{r R2}
+
+r2 = summary(lmfit)$r.squared
+
+print(paste0("R2 of the percent of irrigated agriculture land on total water storage is: ", round(r2,2)))
+
+```
+* This model explains only 3% of the data variability.
+
+
+# Question 3: OLS Assumptions
+
+Recall our four assumptions needed to ensure that OLS is an unbiased estimator with the lowest variance:
+
+1. The population relationship is linear in parameters with an additive disturbance.
+
+2. Our $X$ variable is **exogenous**, _i.e._, $\mathop{\boldsymbol{E}}\left[ u \mid X \right] = 0$.
+
+3. The $X$ variable has variation. 
+
+4. The population disturbances $u_i$ are independently and identically distributed as **normal** random variables with mean zero $\left( \mathop{\boldsymbol{E}}\left[ u \right] = 0 \right)$ and variance $\sigma^2$ (_i.e._,  $\mathop{\boldsymbol{E}}\left[ u^2 \right] = \sigma^2$)
+  
+We will assume for now that 1 and 2 hold^[We will explore relaxing these assumptions in the next assignment.], and we know from our regressions above that 3 holds. Here, we will dig into assumption 4. 
+
+As we did in this week's lab, generate residuals from your main regression and use residuals to assess the three components of assumption #4. Would you recommend using simple linear regression in this case? Which property of OLS (unbiasedness and/or lowest variance) is likely not being upheld in these data?
+
+```{r}
+# create predictions and residuals
+predictions <- water_data %>% 
+  modelr::add_predictions(lmfit) %>%
+  mutate(residuals = trend_water_storage-pred)
+
+# histogram
+residual_hist <- ggplot(data = predictions) + 
+                  geom_histogram(aes(residuals), bins=25)
+
+# mean
+mean <- round(mean(predictions$residuals), 3)
+
+# variance in residuals against percent area irrigated
+residual_plot <- ggplot(predictions) + geom_point(aes(x=pct_irrigated, y=residuals)) 
+
+residual_hist
+residual_plot
+
+```
+**Answer**
+
+* I would not recommend using a simple linear regression for this data. The `mean` is equal to `r mean`. Residuals should have a mean of zero, which is is the case here, but doesn't tell the whole story. The residuals are not uniformly distributed and have a wide area of variance at the lower values. The residuals are heteroskedastic, which is why I am not recommending a simple linear regression, as oridnary least squares assumes residuals have constant variance.
+
+
+
+

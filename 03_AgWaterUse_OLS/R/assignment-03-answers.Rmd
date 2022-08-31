@@ -1,0 +1,307 @@
+---
+title: "EDS 222: Assignment 03 (due: Oct 18, 5pm)"
+author: "{ANSWER KEY}"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# Load all the packages needed here
+library(tidyverse)
+library(readr)
+library(gt)
+library(tufte)
+library(here)
+
+# # Set your filepath here! Or, set this up as an .Rproj if you'd like.
+# rootdir <- ("~/Dropbox/Teaching/UCSB/EDS_222/EDS222_data")
+# datadir <- file.path(rootdir,"data","03-week-three")
+# setwd(file.path(rootdir,"homework","week-three"))
+```
+
+
+# Question 1: Some math with Ordinary Least Squares
+
+We will rely on `R` to implement all the heavy lifting of OLS, but it's essential that you understand what is happening beneath the hood of canned linear regression commands so that you can accurately design, execute, and interpret regressions. These questions ask you to probe the algebra of least squares so that you can see some of the mechanics behind `lm()` and other linear regression packages in `R` and beyond. 
+
+## Question 1.1 
+
+In class, I claimed that the OLS regression line will always pass through the sample means, $(\bar x, \bar y)$. Desik rightly asked for proof. Now's your chance to prove it! 
+
+Prove that this claim holds. That is, use the definition of a sample mean, an OLS residual, and an OLS prediction to show that the predicted value of $\bar x$ using the OLS intercept and slope parameters is exactly $\bar y$.
+
+Hint: start with the definition of the sample mean of $y$, and do some substitution relying on the fact that $e_i = y_i - \hat y_i$ and $\hat y_i = \hat\beta_0 + \hat\beta_1 x_i$. 
+
+**Answer:**
+
+\begin{align*}
+\bar y &= \frac{1}{n}\sum_i y_i \\
+  &= \frac{1}{n}\sum_i e_i+\hat y_i \\
+  &= \frac{1}{n}\sum_i e_i + \hat\beta_0 + \hat\beta_1 x_i \\
+  &= \frac{1}{n}\sum_i e_i + \hat\beta_0 + \hat\beta_1\frac{1}{n}\sum_i x_i \\
+  &= \hat\beta_0 + \hat\beta_1 \bar x
+\end{align*}
+
+
+## Question 1.2 
+
+Consider a simple linear regression model:
+
+$$y_i = \beta_0 + \beta_1 x_i + u_i$$
+Recall the definitions of the OLS estimate of the intercept and slope coefficients:
+
+$$\hat{\beta}_1 = \dfrac{\sum_i (x_i - \overline{x})(y_i - \overline{y})}{\sum_i (x_i - \overline{x})^2} = \frac{cov(x,y)}{var(x)}$$
+
+$$ \hat{\beta}_0 = \overline{y} - \hat{\beta}_1 \overline{x} $$
+Using these definitions, show mathematically how $\hat\beta_0$ and $\hat\beta_1$ change under the following scenarios:^[Note that these kinds of scenarios occur in practice all the time when we change units of measurement.]
+
+- All observations of the independent variable are multiplied by 3 
+
+**Answer:**
+
+**Let our estimate of the original $\beta_1$ and $\beta_0$ in the original data be denoted by $\hat\beta_1$ and $\hat\beta_0$, respectively.** 
+
+**Now, we multiply all observations of $x$ by 3.** 
+
+**Our estimate of the slope now becomes:**^[Note: we are using $\tilde\beta$ notation to indicate a new coefficient estimate we recover in these new data]
+
+\begin{align*}
+\tilde\beta_1 &= \frac{cov(3x,y)}{var(3x)} \\
+  &= \frac{3cov(x,y)}{3^2var(x)} \\
+  &= \frac{1}{3}\hat\beta_1
+\end{align*}
+
+**Our estimate of the intercept now becomes:**
+
+\begin{align*}
+\tilde\beta_0 &= \bar{y} - \tilde\beta_1 \frac{1}{n}\sum_i 3x_i \\
+  &= \bar{y} - \frac{1}{3} \hat\beta_1 3\bar{x} \\
+  &= \bar{y} - \hat\beta_1 \bar{x}) \\
+  &= \hat\beta_0
+\end{align*}
+
+**Therefore, when we multiply our independent variable by 3, our intercept _does not change_, while our slope coefficient is multiplied by 1/3. This is intuitive -- nothing about the predicted value of $y$ at $x=0$ has changed, since the $y$ data were unaffected by this rescaling. However, the rescaling of $x$ means that we are stretching our data out along the $x$-axis: changing this new $x$ variable by 1 is equivalent to changing the original $x$ variable by 3, so our slope coefficient falls by 1/3.**
+
+
+- All observations of the dependent variable are multiplied by 3 
+
+**Here, we multiply all observations of $y$ by 3.** 
+
+**Our estimate of the slope now becomes:**^[Note: using the same $\tilde\beta$ notation to indicate the new coefficients in the transformed data.]
+
+\begin{align*}
+\tilde\beta_1 &= \frac{cov(x,3y)}{var(x)} \\
+  &= \frac{3cov(x,y)}{var(x)} \\
+  &= 3\hat\beta_1
+\end{align*}
+
+**Our estimate of the intercept now becomes:**
+
+\begin{align*}
+\tilde\beta_0 &= \frac{1}{n}\sum_i 3y_i - \tilde\beta_1 \bar{x} \\
+  &= 3\bar{y} - 3 \hat\beta_1 \bar{x} \\
+  &= 3(\bar{y} - \hat\beta_1 \bar{x} \\
+  &= 3\hat\beta_0
+\end{align*}
+
+**Therefore, both our intercept and slope coefficients are multiplied by 3 when the independent variable is multiplied by 3. The intuition here is that when we evaluate our regression at $x=0$, the $y$ variable must be 3 times its original value since all values are scaled by 3. Similarly, a one unit change in $x$ will lead to a three times larger change in $y$ since all $y$ values have been scaled by 3.**
+
+- All observations of both the independent and dependent variables are multiplied by 3 
+
+**Here, we multiply all observations of $y$ _and_ $x$ by 3.** 
+
+**Our estimate of the slope now becomes:**^[Note: using the same $\tilde\beta$ notation to indicate the new coefficients in the transformed data.] 
+
+\begin{align*}
+\tilde\beta_1 &= \frac{cov(3x,3y)}{var(3x)} \\
+  &= \frac{3^2 cov(x,y)}{3^2 var(x)} \\
+  &= \hat\beta_1
+\end{align*}
+
+**Our estimate of the intercept now becomes:**
+
+\begin{align*}
+\tilde\beta_0 &= \frac{1}{n}\sum_i 3y_i - \tilde\beta_1 \frac{1}{n}\sum_i 3x \\
+  &= 3\bar{y} - \hat\beta_1 3 \bar{x} \\
+  &= 3(\bar{y} - \hat\beta_1 \bar{x}) \\
+  &= 3\hat\beta_0
+\end{align*}
+
+**Therefore, in this case, our slope coefficient is unchanged while our intercept is multiplied by 3. Here, since both variables are scaled, a one unit change in our new $x$ leads to the same change in $y$ as in the original regression. However, the intercept still gets multiplied by 3 because the predicted _level_ of $y$ when $x=0$ must be 3 times larger than it was before the rescaling.** 
+
+
+Give some intuition for your answers. If your answers differ across scenarios, why do they? If not, why not?
+
+**See above for intuition.**
+
+# Question 2: Water demands of agriculture
+
+The data provided for this assignment, called `GRACE_water_irrigation.Rds`, represent measures of changes in total water availability (called "water storage" in these data) over a subset of Earth’s surface, as measured by the GRACE satellite and modeled by the GSFC Mascon product (see [here]( https://earth.gsfc.nasa.gov/geo/data/grace-mascons) for details). Each observation corresponds to one equal area grid cell, where grid cells are approximately 12,500 square kilometers. This subset of the full dataset only contains grid cells that have some observed agricultural irrigation contained within them. 
+
+The README provided alongside these data contain details on each variable.
+
+## Question 2.1
+
+- Make a scatterplot showing changes in water storage ($y$-axis) as it relates to irrigated area ($x$-axis) and discuss the general relationship. Do you see a positive or negative correlation? Does that make intuitive sense to you? How strong does the correlation appear to be?
+
+**Answer:**
+
+```{r, fig.fullwidth=TRUE}
+df = read_rds(here("data", "GRACE_water_irrigation.Rds"))
+
+ggplot(data=df, aes(x=pct_irrigated, y = trend_water_storage)) + 
+  geom_point(size=3) + theme_bw() + geom_hline(yintercept=0, color="red")
+```
+**This scatterplot shows a generally downward sloping relationship, although it is very noisy with a lot of odd things happening near zero on the $x$-axis. This suggests  there is likely a negative correlation, but I would guess it's not very strong given the large variance in water storage at any given magnitude of irrigation. In general, a negative relationship makes sense, since more irrigation leads to loss of freshwater, as aquifers get drawn down and surface water supplies depleted due to the demands of agricultural production.** 
+
+- You probably see a lot of overlapping points on your scatterplot, making it hard to see the distribution of the data clearly. This kind of plot indavertendly draws attention to outliers, instead of to the majority of your data. To remedy this, try the following two graphs:
+
+Remake your scatterplot, but use the `alpha` option in your `geom_point()` command to make each dot partially transparent. This allows the reader to see where data density is relatively high versus low.
+
+
+Instead of a scatterplot, make a 2-dimensional density plot, which will show the joint distribution of your data across these two variables. You can do this using `geom_bin2d()` with `ggplot`.
+
+**Answer:**
+
+```{r, fig.fullwidth=TRUE}
+ggplot(data=df, aes(x=pct_irrigated, y = trend_water_storage)) + 
+  geom_point(alpha=0.1, size=3) + theme_bw() + geom_hline(yintercept=0, color="red")
+
+ggplot(data=df, aes(x=pct_irrigated, y = trend_water_storage)) + 
+  geom_bin2d(bins=50) + theme_bw() + geom_hline(yintercept=0, color="red")
+
+```
+
+## Question 2.2
+
+Use the `lm()` command to estimate the following simple linear regression:
+
+$$ \text{trend in water storage}_i = \beta_0 + \beta_1 \text{percent of land irrigated}_i + \varepsilon_i $$
+Display your estimated intercept and slope coefficients using `summary()`, `gt()`, or `kable()`. Interpret each coefficient in words, and then answer the following:
+
+- How much water do you predict will be lost (or gained) per month in a grid cell that is only 1% irrigated?
+- How much water do you predict will be lost (or gained) per month in a grid cell that is 80% irrigated?
+- How much water do you predict will be lost (or gained) per month in a grid cell in which irrigation expands from 10% to 75%? 
+
+**Answer:**
+
+```{r}
+summary(lm(trend_water_storage ~ pct_irrigated, data =df))
+```
+
+**Interpretation:** 
+
+**Our regression results imply that we predict a loss of 0.0036 cm of equivalent water height per month in grid cells with zero irrigation. We also estimate that a one percentage point increase in a grid cell's irrigated area (e.g., from 43% irrigated to 44% irrigated, or from 86% irrigated to 87% irrigated) will lead to an increase in water loss of 0.0018 cm of equivalent water height per month. For example, consider a grid cell with 50% irrigated area and an existing downward trend in water storage of -0.001 cm of equivalent water height per month. If we increase irrigated area to 51%, we estimate the trend in water storage will change to: $-0.001 + -0.0018 = -0.0028$ cm e.w.h. per month.**
+
+- How much water do you predict will be lost (or gained) per month in a grid cell that is only 1% irrigated?
+
+**Our model predicts that a grid cell with 1% irrigation will loose $0.0036 + 0.0018 = .0054$ cm of equivalent water height per month.**
+
+- How much water do you predict will be lost (or gained) per month in a grid cell that is 80% irrigated?
+
+**Our model predicts that a grid cell with 80% irrigation will loose $0.0036 + 0.0018\times 80 = .1476$ cm of equivalent water height per month.**
+
+- How much water do you predict will be lost (or gained) per month in a grid cell in which irrigation expands from 10% to 75%? 
+
+**There are two ways you could answer this. First, this is a $75-10=65$ unit change in $x$, so we predict this grid cell will lose $.0018\times 65= 0.117$ more cm of equivalent water height per month when its irrigation expands from 10% to 75%. We could also calculate this by taking the difference in predicted values for $x=75$ minus $x=10$: $0.0036+.0018\times 75 - 0.0036 - .0018\times 10 = .0018 \times 65 = 0.117$.**
+
+## Question 2.3 
+
+The `pct_irrigated` variable covers a range of zero to 100 (units: percent of grid cell that is irrigated). Based on the math you showed in Question 1.2, how do you expect your coefficients to change if you rescale this variable to cover the range zero to 1 (units: fraction of grid cell that is irrigated).
+
+**Answer:**
+
+**Our math above implies that if we divide our independent variable by 100 (which is equivalent to multiplying by $\frac{1}{100}$), our slope coefficient should change by $\frac{1}{1/100} = 100$. That is, our slope coefficient should be 100 times larger. Our intercept should be unchanged.**
+
+Implement this rescaling and show your new coefficients. Does your math align with your new coefficients? 
+
+**Answer:**
+
+```{r}
+df <- df %>% mutate(frac_irrigated = pct_irrigated/100)
+summary(lm(trend_water_storage ~ frac_irrigated, data =df))
+```
+
+**Answer:**
+
+**Yes, our results align with our math from Question 1. The intercept is unchanged (still at -0.0036), while our slope coefficient was multiplied by 100. This makes sense -- increasing the fraction of the grid cell that is irrigated from 0 to 1 amounts to changing its percent irrigated from 0% to 100%!**
+
+## Question 2.4
+    
+Using your original regression model with the original `pct_irrigated` variable, use `geom_smooth()` in `ggplot()` to visualize your regression line, overlaid on your scatterplot. Use `se=FALSE` to suppress standard errors; we will dig into those soon!
+
+How well do you think your model is fitting the data?
+
+**Answer:**
+
+```{r}
+ggplot(data=df, aes(x=pct_irrigated, y = trend_water_storage)) + 
+  geom_point(alpha=0.1, size=3) + 
+  geom_smooth(method='lm', formula= y~x, color="lightcoral", se=F, size=1.5) +
+  theme_bw() + geom_hline(yintercept=0, color="seagreen")
+```
+
+**This looks like a decent model fit, especially at higher levels of irrigation. However, there is wide variance in residuals at lower levels of irrigation, suggesting there is some important share of the variation in water storage that our simple model cannot explain.**
+
+Compute the coefficient of determination ($R^2$), or report it based on the regression results you saved above. What percent of variation in water storage trends are explained by irrigation? Does this align with your intuition based on the scatterplot?
+
+**Answer:**
+
+```{r}
+mod <- lm(trend_water_storage ~ pct_irrigated, data =df)
+summary(mod)$r.squared
+```
+
+**This tells us that about 3% of the variation in water storage trends is explained by irrigation extent. This makes sense based on our scatter plot, as we can see that there are very large residuals at low levels of irrigation -- those will dramatically increase the numerator of the second term in the $R^2$ expression, amounting to a large sum of squared errors and a small $R^2$.**
+
+# Question 3: OLS Assumptions
+
+Recall our four assumptions needed to ensure that OLS is an unbiased estimator with the lowest variance:
+
+1. The population relationship is linear in parameters with an additive disturbance.
+
+2. Our $X$ variable is **exogenous**, _i.e._, $\mathop{\boldsymbol{E}}\left[ u \mid X \right] = 0$.
+
+3. The $X$ variable has variation. 
+
+4. The population disturbances $u_i$ are independently and identically distributed as **normal** random variables with mean zero $\left( \mathop{\boldsymbol{E}}\left[ u \right] = 0 \right)$ and variance $\sigma^2$ (_i.e._,  $\mathop{\boldsymbol{E}}\left[ u^2 \right] = \sigma^2$)
+  
+We will assume for now that 1 and 2 hold^[We will explore relaxing these assumptions in the next assignment.], and we know from our regressions above that 3 holds. Here, we will dig into assumption 4. 
+
+As we did in this week's lab, generate residuals from your main regression and use residuals to assess the three components of assumption #4. Would you recommend using simple linear regression in this case? Which property of OLS (unbiasedness and/or lowest variance) is likely not being upheld in these data?
+
+**Answer:**
+
+**First, let's assess whether the residuals appear to be mean zero and normally distributed. The plot below shows that the residuals _do_ look roughly normally distribted. Based on this histogram and the `summary(lm())` results plotted above, it does appear there is a bit of a left tail in the residuals distribution, so it is definitely not perfectly normal. However, I would not be too worried about the assumption of a normal distribution of residuals based on this figure.**
+
+```{r}
+# regression
+model_1 <- lm(trend_water_storage ~ pct_irrigated, data = df)
+
+# create predictions and residuals
+predictions <- df %>% modelr::add_predictions(model_1) %>%
+  mutate(residuals = trend_water_storage-pred)
+
+# histogram of residuals
+ggplot(data=predictions) + geom_histogram(aes(residuals), bins=25)
+
+# mean
+mean(predictions$residuals)
+```
+
+**Second, let's explore whethere the residuals appear to have constant variance when plotted against $x$. Recall that what we are worried about is if there is larger spread at different levels of $x$, which violates the constant $\sigma^2$ assumption. The plot below shows mixed results -- for most of the data and across most of the support of $x$, we have a similar looking variance. However, there is extremely high variance in residuals around $x=0$, and it's also likely variance is higher at very high levels of irrigation, as the data are very sparse and tend to be relatively far from the 0 line. Therefore, it is likely this assumption is violated.**
+
+```{r}
+# variance in residuals against tail length
+ggplot(predictions) + geom_point(aes(x=pct_irrigated, y=residuals), alpha=.1, size=2) 
+```
+
+**OLS is still unbiased in this case if assumptions 1, 2, and 3 hold. However, the second plot we made is sufficiently concerning that we should be worried about assumption 4 holding. Therefore, the property of lowest variance is possibly not upheld in this case -- we might have an unbiased estimate of our coefficients, but an alternative estimator to OLS may do a better job getting us close to the true population coefficients in our single sample of data.**

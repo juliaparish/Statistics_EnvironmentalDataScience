@@ -1,0 +1,714 @@
+---
+title: "EDS 222: Assignment 02 (due: Oct 08, 5pm)"
+author: "Julia Parish"
+date: "`r Sys.Date()`"
+output:
+  tufte::tufte_html: default
+  tufte::tufte_handout:
+    citation_package: natbib
+    latex_engine: xelatex
+  tufte::tufte_book:
+    citation_package: natbib
+    latex_engine: xelatex
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+knitr::opts_chunk$set(message = FALSE)
+
+# Load all the packages needed here
+library(tidyverse)
+library(readr)
+library(gt)
+library(tufte)
+library(scales)
+library(patchwork)
+library(here)
+library(dplyr)
+library(kableExtra)
+
+```
+
+```{r include = FALSE, warning=FALSE, message=FALSE}
+# Set your file path here! Or, set this up as an .Rproj if you'd like.
+rootdir <- ("C:/Users/julia/Documents/_MEDS/EDS222_Stats_Carleton/Labs")
+
+# This runs the script _common.R, which loads all the packages we'll need for today and does some extra stuff we won't really use, at least for now.
+source(file.path(rootdir,"_common.R"))
+
+```
+
+
+# Question 1: Probability density functions in `R`
+
+`R` has many built-in functions that let you describe, analyze, and sample from common probability density functions. For example, if you type `?stats::Normal` in your console, you'll see documentation on all the functions relevant to the normal distribution.^[Recall that the normal distribution is a family of distributions that are symmetric and do not have long tails. They each have different means $\mu$ and standard deviations $\sigma$.] These functions include:
+
+- `dnorm(x, mean = 0, sd = 1)`, which returns the _density_ of the normal distribution evaluated at whatever values you pass in via `x`. You can think of the output of `dnorm()` as the _height_ of the normal pdf at the value `x`. Note that this function defaults to a normal distribution with $\mu = 0$ and $\sigma = 1$, but you can of course change that.
+
+- `pnorm(q, mean = 0, sd = 1)`, which returns the _cumulative probability_ of the normal distribution evaluated at whatever values you pass in via `q`. You can think of the output of `pnorm()` as the _area_ under the pdf to the left of the value `q`. Again, note the default distribution parameters $\mu$ and $\sigma$.
+
+<!-- - `rnorm(n, mean = 0, sd = 1)`, which returns a random sample of size $n$, where each observation is randomly drawn from the normal distribution. -->
+
+## Question 1.1 
+
+```{R, echo = T}
+# create a object that contains a sequence of -4, 4, 0.01 
+x = seq(-4, 4, 0.01)
+
+```
+
+Use `dnorm()` to compute the density of the normal pdf for all values in the `x` vector generated above, using $\mu = 0$ and $\sigma = 1$. Use `geom_polygon()`, `geom_line()`, or `geom_point()` (take your pick) to plot this pdf over the support given in `x`. 
+
+```{r dnorm, echo = FALSE}
+# create an object for the density of a continuous random variable, x.
+
+x_dnorm <- dnorm(x, mean = 0, sd = 1) # object = list
+
+# create a data frame to plot
+
+x_dnorm_df <- data.frame(x, x_dnorm)
+
+# plot the distribution of the density at each individual value of x
+
+x_dnorm_plot <- ggplot(data = x_dnorm_df, 
+                       aes(x = x, y = x_dnorm)) +
+                geom_line(size = 1.2) + 
+                labs(
+                  title = "Q1.1 Probability density for all values of X",
+                  x = "X",
+                  y = "Density of X") +
+                theme(
+                  plot.title = element_text(face="bold"),
+                  axis.title.x = element_text(face="bold"),
+                  axis.title.y = element_text(face="bold"),
+                  panel.grid.minor = element_blank())
+  
+x_dnorm_plot
+```
+```{r}
+
+ggsave("assignment-02_files/figure-html/fig1_x_dnorm_plot.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+
+
+```
+
+## Question 1.2
+
+Use the densities you generated in 1.1 to calculate the probability that a random variable distributed normally with mean 0 and standard deviation 1 falls between -2 and 2.^[Hint: Remember that $$ Pr(A\leq x \leq B) = \int_A^B f(x)dx $$ where the integral is a fancy way to tell you to sum up $f(x)$ over values of $x$ from $A$ to $B$.]
+
+```{r pnorm, echo = FALSE, message=FALSE}
+# find the probability that a value of x falls within the values of -2 and 2
+
+x_pnorm <- (round(pnorm(2, mean = 0, sd = 1) - pnorm(-2, mean = 0, sd = 1), 2))
+
+xpnormpercent <- x_pnorm * 100
+
+
+```
+* Q1.2 The probability that a value of `x` falls between -2 and 2 is `r xpnormpercent`%.
+
+## Question 1.3
+
+Repeat the last two questions, but let $\sigma=2$. Describe why your answer changes in the direction that it does under this new normal distribution.
+
+```{r dnorm sd2, echo = FALSE, message=FALSE}
+# create an object for the density of a continuous random variable, x and a standard deviation of 2.
+
+sd2_dnorm <- dnorm(x, mean = 0, sd = 2) # object = list
+
+# create a data frame to plot 
+
+sd2_dnorm_df <- data.frame(x, sd2_dnorm)
+
+# plot the distribution of the density at each individual value of x with a standard deviation of 2
+
+sd2_dnorm_plot <- ggplot(data = sd2_dnorm_df, 
+                       aes(x = x, y = sd2_dnorm)) +
+                geom_line(size = 1.2) + 
+                labs(
+                  title = "Q1.3 Probability density of X with sd = 2",
+                  x = "X",
+                  y = "Density of X") +
+                theme(
+                  plot.title = element_text(face="bold"),
+                  axis.title.x = element_text(face="bold"),
+                  axis.title.y = element_text(face="bold"),
+                  panel.grid.minor = element_blank())
+  
+sd2_dnorm_plot
+
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig2_probability_density_x.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+
+```{r pnorm sd2, echo = FALSE, message=FALSE}
+# find the probability that a value of x falls within the values of -2 and 2
+
+sd2_pnorm <- (round(pnorm(2, mean = 0, sd = 2) - pnorm(-2, mean = 0, sd = 2), 2))
+
+sd2_percent <- sd2_pnorm * 100
+
+
+```
+
+* Q1.3 The probability that a value of `x` with a $\sigma=2$ falls between -2 and 2 is `r sd2_percent`%.
+
+
+```{r}
+x_dnorm_plot / sd2_dnorm_plot
+```
+
+* Q1.3 The standard deviation increased from 1 to 2, which increased the variance, or dispersal, of the density of X. This increase of the standard deviation widen and lower the density of X. The density of X was lowered to a maximum range of 0.2 versus a maximum of 0.4 when the standard deviation was 1. 
+
+
+## Question 1.4 
+
+An analogous set of functions computes densities and probabilities for the **log normal** distribution, a distribution with skew. These functions are `dlnorm()` and `plnorm()` and operate as above for the normal distribution functions.
+
+Use `plnorm()` under default parameters to compute the probability that a random variable distributed log normal takes on a value above 2. Use `pnorm()` to compute the corresponding probability for the normal distribution under default parameters. Why are these values so different?
+
+```{r plnorm, echo = FALSE, message=FALSE}
+# create log 
+
+plnorm2 <- plnorm(q = 2, lower.tail = F) %>%   # lower.tail set to false to remove the negative tail. Can also use 1 - plnorm 
+                  round(5)
+
+plnorm2_percent <- plnorm2 * 100
+
+```
+```{r pnorm2, echo = FALSE, message=FALSE}
+pnorm2 <- pnorm(q = 2, lower.tail = F) %>% 
+          round(5)
+
+pnorm2_percent <- pnorm2 * 100
+
+```
+
+
+```{r log plot, echo = FALSE, message=FALSE}
+norm_plot <- ggplot() + # plot the 
+  stat_function(fun = dnorm, 
+                # args = list(mean = 0, sd = 1), 
+                geom = 'area', 
+                fill = "goldenrod1", 
+                xlim = c(2, 4)) +
+  stat_function(fun = dnorm,
+                # args = list(mean = 0, sd = 1),
+                xlim = c(-4, 4)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Normal Distribution") +
+  theme_minimal()
+
+log_plot <- ggplot() +
+  stat_function(fun = dlnorm, 
+                # args = list(meanlog = 0, sdlog = 1), 
+                geom = 'area', 
+                fill = "palegreen4", 
+                xlim = c(2, 12)) +
+  stat_function(fun = dlnorm, 
+                # args = list(meanlog = 0, sdlog = 1), 
+                xlim = c(0, 12)) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  scale_x_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(title = "Log Normal Distribution") +
+  theme_classic()
+log_plot / norm_plot
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig3_lognormal.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+
+* Q1.4 For the log normal distribution using the `plnorm()` function, the probability that a value of `x` is greater than 2 is `r plnorm2_percent`%. When you use the normal distribution function `pnorm()`, the probability that a value of `x` is greater than 2 is `r plnorm2_percent`%. These values differ because the log distribution creates all positive values, creating a significantly right skewed distribution. The normal distribution is a bell curve and will have an equal density of X on either side. Whereas, the log normal distribution pushes the density of x values to the right of 0, which increases the density of X values to higher values than the normal distribution. This increases the probability that a value of `x` will be greater than 2. 
+
+# Question 2: Climate summary statistics
+
+In the following questions, you'll be working with climate data from Colombia. These data were obtained from the [ERA5 database](https://www.ecmwf.int/en/forecasts/datasets/reanalysis-datasets/era5), a product made available by the European Centre for Medium-Range Weather Forecast. The high-resolution hourly gridded data were aggregated to the municipality by month level -- that is, each observation in these data report a monthly average temperature value and a monthly cumulative precipitation value for one of the 1,123 municipalities across the country.^[Note: The computational techniques we use to go from raw, spatial, gridded data to a tabular dataset at an administrative level are really valuable for environmental data science. We'll cover these spatial and temporal aggregation techniques in the second half of the course.] 
+
+These data -- stored in `colombia_climate.csv` -- cover all municipalities for the period 1996 to 2015. Climate scientists tend to describe the "climate" of a location as the probability density function of a large set of climate variables over about a 30 year period. We only have 20 years, but we will consider our sample as randomly drawn temperature and precipitation realizations from the "climate" p.d.f. over this period. We are aiming to draw conclusions about the Colombian climate using this sample of temperature and precipitation observations. 
+
+## Question 2.1
+
+Read these data into `R` using the `read.csv()` function.^[See the README.rtf file for details on the variables in `colombia_climate.csv`.]
+
+```{r data read in, echo = FALSE, message=FALSE}
+# read in the Colombia climate data
+
+cclimate_data <- read.csv(here("data", "colombia_climate.csv"))
+
+#cclimate_data %>% glimpse() # view data frame
+  
+```
+
+```{r tidy data, echo = FALSE, message=FALSE}
+# tidy data
+
+climate_data <- cclimate_data %>% 
+  rename(deptcode = dpto_ccdgo, # renames each individual column, new name first then old name second
+         deptname = dpto_cnmbr,
+         municipality = mpio_cnmbr,
+         precip_mm = precip) %>% 
+  mutate(temp_c = round(temperature, digit = 2)) # create new column indicating temp is C and round to 2 digits
+  
+```
+For each of the temperature and rainfall variables, create a histogram that shows the distribution of the variable across the entire sample. For each variable, answer the following questions:
+
+- Is the distribution symmetric or skewed?
+- Is there a long tail (or two), or does this distribution look approximately normally distributed? 
+- Is the distribtion unimodal, bimodal, or multimodal? 
+
+```{r min max, echo = FALSE, message=FALSE}
+minclimate <- climate_data %>% 
+        summarise_if(is.numeric, min) # find min values within climate data 
+
+maxclimate <- climate_data %>% # find max values 
+        summarise_if(is.numeric, max)
+
+```
+
+```{r histogram temp, fig.cap = "Temperature Distribution", echo = FALSE, message=FALSE}
+xtemplab <- "Temperature (°C)"
+
+c_temp <- ggplot(data = climate_data, 
+                 aes(x = temp_c)) + 
+          geom_histogram(fill = "#FF8C33") +
+          labs(title = "Columbia Climate Data 1996 - 2015",
+               subtitle = "Temperature Distribution",
+               x = xtemplab,
+               y = "Count") +
+          theme_minimal()
+c_temp
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig4_histogram_temp.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+* Q2.1 Temperature - The temperature distribution is right-skewed with an insignificant tail and is bi-modal. 
+
+```{r histogram precip, fig.cap = "Precipitation Distribution", echo = FALSE, message=FALSE}
+c_precip <- climate_data %>%
+          ggplot(mapping = aes(x = precip_mm)) + 
+          geom_histogram(fill = "lightslateblue") +
+          labs(title = "Columbia Climate Data 1996 - 2015",
+               subtitle = "Precipitation Distribution",
+               x = "Precipitation (mm)",
+               y = "Count") +
+          theme_minimal()
+
+c_precip
+
+```
+
+```{r}
+ggsave("assignment-02_files/figure-html/fig7_histogram_precip_meanmed.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+*Q2.1 Precipitation - The precipitation distribution is right-skewed with a long tail and is uni-modal. There are precipitation data points up to 3215.26 mm. 
+
+## Question 2.2
+
+Add on top of your histograms vertical lines indicating the mean and the median. What does the difference between those two lines tell you about these distributions? 
+
+```{r mean median, echo = FALSE, message=FALSE}
+mean_temp <- mean(climate_data$temp_c) # find mean temp
+med_temp <- median(climate_data$temp_c) # find median temp
+
+mean_precip <- mean(climate_data$precip_mm) # find mean precip
+med_precip <- median(climate_data$precip_mm) # find med precip
+
+```
+
+
+```{r histogram temp meanmed , fig.cap = "Temperature Distribution - Mean & Median", echo = FALSE, message=FALSE}
+### create plot of the temperature distribution, include mean and median values
+
+temp_meanmed <- climate_data %>%
+          ggplot(mapping = aes(x = temp_c)) + 
+          geom_histogram(fill = "#FF8C33") +
+          geom_vline(xintercept = mean(climate_data$temp_c), 
+                      color = "#444343",
+                      size = 1.5) +
+              annotate("text", 
+                       label = "Mean = 20", 
+                       x = 22.25, 
+                       y = 32000, 
+                       color = "black",
+                       size = 3.5) +
+          geom_vline(xintercept = median(climate_data$temp_c), 
+                              color = "#2565D8",
+                              size = 1.5) +
+              annotate("text", 
+                       label = "Median = 19", 
+                       x = 16.75, 
+                       y = 32000, 
+                       color = "#2565D8",
+                       size = 3.5) +
+          labs(title = "Columbia Climate Data 1996 - 2015",
+               subtitle = "Temperature Distribution",
+               x = xtemplab,
+               y = "Count") +
+          theme_minimal()
+
+temp_meanmed 
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig6_histogram_temp_meanmed.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+
+```
+
+* Q2.2 Temperature - The mean (20°C) and median (19°C) for the temperature variable are very close to being equal, which indicates the data is not significant skewed, or there is not a lot of outlier data points. These relatively close values proves the distribution does not have a long tail.  
+
+
+```{r histogram precip meanmed, fig.cap = "Precipitation Distribution - Mean & Median", echo = FALSE, message=FALSE}
+### create plot of the precipitation distribution, include mean and median values
+
+precip_minmed <- climate_data %>%
+          ggplot(mapping = aes(x = precip_mm)) + 
+          geom_histogram(fill = "lightslateblue") +
+          # insert mean line and annotate on plot
+          geom_vline(xintercept = mean(climate_data$precip_mm),                       color = "#444343",
+                      size = 1.1) +
+              annotate("text", 
+                       label = "Mean = 284", 
+                       x = 615, 
+                       y = 78000, 
+                       color = "black",
+                       size = 4) +
+           # insert median line and annotate on plot
+          geom_vline(xintercept = median(climate_data$precip_mm), 
+                              color = "#66AB4D",
+                              size = 1.1) +
+              annotate("text", 
+                       label = "Median = 225", 
+                       x = 650, 
+                       y = 83000, 
+                       color = "#66AB4D",
+                       size = 4) +
+          labs(title = "Columbia Climate Data 1996 - 2015",
+               subtitle = "Precipitation Distribution",
+               x = "Precipitation (mm)",
+               y = "Count") +
+          theme_minimal()
+
+precip_minmed 
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig7_histogram_precip_meanmed.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+* Q2.3 Precipitation - The mean (284 mm) and median (225 mm) for precipitation variable are not as close as they were with the temperature variable. The mean is influenced by significant outliers within the precipitation data. The maximum value for the precipitation data is 3215 mm. This value is significantly greater than either the mean or the median, which indicates that the majority of the data is clustered in the lower values and that this distribution is skewed to the right. 
+
+## Question 2.3
+
+Anthropogenic climate change is expected to raise temperatures across Colombia, increase total precipitation, and increase variability in precipitation. Compute the mean, the median, and the standard deviation of each climate variable in:
+
+- The full sample
+- Before 2005
+- After 2005
+
+Put your summary statistics into a table. Are the changes over time in these summary statistics consistent with climate change? If so, why? If not, why not?
+
+```{r compute mean med sd, echo = FALSE, message=FALSE}
+# analyze and summarize data
+fulldata <- climate_data %>% 
+            summarize(year, precip_mm, temperature)
+
+pre2005 <- climate_data %>% 
+          filter(year <= 2005) %>% 
+          summarize(year, precip_mm, temp_c)
+
+post2005 <- climate_data %>% 
+          filter(year > 2005) %>% 
+          summarize(year, precip_mm, temp_c)
+
+```
+
+
+```{r dataframe creation, echo = FALSE, message=FALSE}
+# create data frames with mean, median, sd values for the three data sets
+
+fulldf <- fulldata %>% 
+  summarise(precip_mean = mean(climate_data$precip_mm),
+            precip_med = median(climate_data$precip_mm),
+            precip_sd = sd(climate_data$precip_mm),
+            temp_mean = mean(climate_data$temp_c),
+            temp_med = median(climate_data$temp_c),
+            temp_sd = sd(climate_data$temp_c)) %>% 
+            mutate(source = "full climate data")
+
+pre2005df <- pre2005 %>% 
+  summarise(precip_mean = mean(pre2005$precip_mm),
+            precip_med = median(pre2005$precip_mm),
+            precip_sd = sd(pre2005$precip_mm),
+            temp_mean = mean(pre2005$temp_c),
+            temp_med = median(pre2005$temp_c),
+            temp_sd =  sd(pre2005$temp_c)) %>% 
+  mutate(source = "pre2005")
+  
+post2005df <- post2005 %>% 
+  summarise(precip_mean = mean(post2005$precip_mm),
+            precip_med = median(post2005$precip_mm),
+            precip_sd = sd(post2005$precip_mm),
+            temp_mean = mean(post2005$temp_c),
+            temp_med = median(post2005$temp_c),
+            temp_sd = sd(post2005$temp_c)) %>% 
+    mutate(source = "post2005")
+
+```
+
+```{r summary df, echo = FALSE, message=FALSE}
+#combine the three data sets with bind_rows
+
+summary <- bind_rows(fulldf, pre2005df, post2005df) %>% 
+  relocate(source, .before = "precip_mean") %>% # moved data source column to first position
+  relocate(temp_mean, .before = "temp_med")
+
+```
+
+```{r table, echo = FALSE, message=FALSE}
+# Put summary statistics into a table. Are the changes over time in these summary statistics consistent with climate change? If so, why? If not, why not?
+
+summary_table <- knitr::kable(summary,
+                              col.names = c('Data Source', 'Precipitation Mean', 'Precipitation Median', 'Precipitation Std Dev', 'Temperature Mean', 'Temperature Median', 'Temperature Std Dev'),
+                              align = "lcccccc",
+                              caption = "Columbia Climate Data Summary")
+
+summary_table 
+
+```
+
+* Q2.3 - There has been an increase in the average precipitation since 2005. The average temperature has stayed constant in each parameter, though the standard deviation has increased in the years after 2005. These summary statistics may indicate climate change influences, but the time scale (1996-2015) is too truncated to clearly answer is climate change is influencing the climate of Columbia. 
+
+## Question 2.4
+
+Tables are nice, but often a visual can help communicate key summary statistics. Use `geom_boxplot()` in `ggplot2` to make a box plot of each variable, using the default quantile options.^[See Week 2 lab answers for tips on box plots. Make sure your box plot shows the 1st, 2nd, and 3rd quartiles.] 
+
+- What do these boxplots suggest about outliers in each variable? What about skew?
+
+Note: A cool alternative to the standard boxplot is a "raincloud" plot, which helps visualize the quantiles and the underlying data. If you're interested, more info [here](https://www.cedricscherer.com/2021/06/06/visualizing-distributions-with-raincloud-plots-and-how-to-create-them-with-ggplot2/) -- feel free to show a raincloud plot in place of a boxplot if you want to get fancy.
+
+```{r boxplot}
+#quantile(climate_data$precip_mm)
+
+boxplot_temp <- ggplot(climate_data, aes(x = temperature)) + 
+  geom_boxplot(color = "black", fill = "#FF8C33") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y  = element_blank(),
+        axis.ticks.y = element_blank()) +
+  labs(title = "Q2.4 Columbia Climate Summary Statistics",
+       subtitle = "Quantiles Boxplot",
+        x = xtemplab) +
+  scale_x_continuous()
+
+boxplot_precip <- ggplot(climate_data, aes(x = precip_mm)) + 
+  geom_boxplot(color = "black", fill = "lightslateblue") +
+  theme(axis.title.y = element_blank(),
+        axis.text.y  = element_blank(),
+        axis.ticks.y = element_blank()) +
+  labs(x = "Precipitation (mm)") +
+  scale_x_continuous()
+
+boxplot_temp/boxplot_precip
+
+
+```
+
+```{r}
+ggsave("assignment-02_files/figure-html/fig8_boxplot.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+Q2.4 Boxplots - The boxplots visualize data outliers well. The boxplot for temperature values shows there is temperature range (17.5°C - ~23°C) where the majority of the data points fall, and there are very few outliers. It also shows that those outliers are not too extreme as the minimum value is 13.4°C and the maximum value is 31.6°C. This limited outlier range reflects there is a relatively small skew in the temperature distribution. The precipitation boxplot best visualizes the data skew, and how extreme the right skew actually is. 
+
+## Question 2.5
+
+The histograms, summary statistics, and box plots should make you concerned that these data are not normally distributed. As we will show later in the course, it's often very helpful to have normally distributed data before we do things like linear regressions or hypothesis testing. Here, let's use a Q-Q plot to assess the normality of our sample data.
+
+- Use `geom_qq()` and `geom_qq_line()` in `ggplot2` to make a Q-Q plot for each variable.^[`geom_qq_line()` lets you draw a line indicating where the sample quantiles would lie if the data were normally distributed.]
+
+- What do you conclude about the normality of these two variables? 
+
+```{r qq plot temp}
+
+temp_qq <- climate_data %>% 
+            ggplot(aes(sample = temp_c)) +
+            geom_qq(color = "#FF8C33") +
+            geom_qq_line(geom = "path", size = 1) +
+            labs(
+              title = "Columbia Climate (1996-2005): Temperature",
+              subtitle = "Quantile-quantile Plot",
+              y = xtemplab) + 
+            theme_minimal()
+
+```
+
+```{r qq plot precip}
+
+precip_qq <- climate_data %>% 
+            ggplot(aes(sample = precip_mm)) +
+            geom_qq(color = "lightslateblue") +
+            geom_qq_line(geom = "path", size = 1) +
+            labs(
+              title = "Columbia Climate: Precipitation",
+              x = "Distribution Quantiles",
+              y = "Preceptation (mm)") + 
+            theme_minimal()
+
+temp_qq/precip_qq
+
+```
+```{r}
+ggsave("assignment-02_files/figure-html/fig9_qqplot.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+
+* Q2.5 These QQ plots visualize that neither data variables, temperature and precipitation, are normally distributed. For both temperature and precipitation, a majority of the quantile points do not fall on the theoretical normal line. 
+
+## Question 2.6
+
+When our sample observations are not normally distributed, we often rely on nonlinear transformations^[Any mathematical operation that is a nonlinear function of the underlying variable can be considered a "nonlinear transformation". For example, $x^2$ and $log(x)$ are both nonlinear transformations.] to reshape our data. If we compute a nonlinear transformation on our underlying data and they then look closer to normal, we can use this transformed version of our variable in later statistical analysis.
+
+Because we tend to see a lot of variables in the world that follow the lognormal distribution, a very common nonlinear transformation is the natural logarithm. Transform the precipitation data by taking the natural logarithm. Then remake your Q-Q plot -- does your variable (defined as `log(precip)`) now look closer to normally distributed? What can you learn about where the data diverge from the normal distribution?
+
+```{r natural log}
+
+logprecip <- log(climate_data$precip_mm)
+
+precip_qq <- climate_data %>% 
+            ggplot(aes(sample = logprecip)) +
+            geom_qq(color = "lightslateblue") +
+            geom_qq_line(geom = "path", size = 1) +
+            labs(
+              title = "Columbia Climate (1996-2005): Precipitation",
+              subtitle = "Natural Log Quantiles",
+              x = "Distribution Quantiles",
+              y = "Sample Quantiles") + 
+            theme_minimal()
+precip_qq 
+
+```
+
+```{r}
+ggsave("assignment-02_files/figure-html/fig10_naturallog.png",
+                     width=6, 
+                     height=4,
+                     dpi=300)
+```
+does your variable (defined as `log(precip)`) now look closer to normally distributed? What can you learn about where the data diverge from the normal distribution?
+
+
+* Q2.6 The precipitation variable does look more normally distributed after transforming it with the `log` function. Regarding what can we learn about when the data diverged, it occurred in areas where negative rainfall occurs causing negative values for precipitation.  
+
+## Question 2.7: Winsorization
+
+As discussed in class, outliers can have a large influence over some, but not all, summary statistics. A common technique for handling outliers that may be overly influencing a statistical analysis is called "winsorization". This process caps observations at a given percentile of the distribution. For example, winsorizing at the 99th percentile would replace all observations above the 99th percentile with the value of the 99th percentile. This is justified if you have reason to believe those outliers are truly "high" observations, but that their extreme level is unbelievable.^[This happens often in rate data when the denominator is small. For example, a sample of crime rates from across the US may contain extreme rate estimates in locations with small total population because a small denominator leads to very noisy estimates of the rate. However, winsorization represents a direct manipulation of your data, and there are many cases where it is is not a reasonable thing to do, even if it is convenient for removing pesky outliers. Be thoughtful about this in practice!]
+
+- Our precipitation sample in Colombia appears to have quite a few outliers. Implement winsorization at the 90th, 95th, and 99th percentiles for precipitation only. Make a table that reports, for each level of winsorization, the sample mean, median, 75th percentile, and standard deviation.
+
+- Which summary statistics change across the different winsorization levels? Explain why this is the case.
+
+```{r winsorization}
+
+cd_precip_sorted <- climate_data[order(climate_data$precip_mm),]
+
+precip_p90 <- quantile(cd_precip_sorted$precip_mm, 0.90)
+precip_p95 <- quantile(cd_precip_sorted$precip_mm, 0.95)
+precip_p99 <- quantile(cd_precip_sorted$precip_mm, 0.99)
+
+```
+
+```{r}
+# reassign precip values over percentile values
+
+precip90th <- cd_precip_sorted %>% 
+  mutate(precip_mm = case_when(precip_mm >= precip_p90 ~ precip_p90, TRUE ~ precip_mm))
+
+precip95th <- cd_precip_sorted %>% 
+  mutate(precip_mm = case_when(precip_mm >= precip_p95 ~ precip_p95, TRUE ~ precip_mm))
+
+precip99th <- cd_precip_sorted %>% 
+  mutate(precip_mm = case_when(precip_mm >= precip_p99 ~ precip_p99, TRUE ~ precip_mm))
+```
+
+```{r}
+# summarize precip percentiles mean, med, sd, 75thq
+
+df_90th <- precip90th %>% 
+  summarise(precip_mean = mean(precip90th$precip_mm),
+            precip_med = median(precip90th$precip_mm),
+            quantile(precip90th$precip_mm, 0.75),
+            precip_sd = sd(precip90th$precip_mm)) %>% 
+    rename(percentile_75th = "quantile(precip90th$precip_mm, 0.75)") %>% 
+    mutate(source = "90th_Percentile")
+
+df_95th <- precip95th %>% 
+  summarise(precip_mean = mean(precip95th$precip_mm),
+            precip_med = median(precip95th$precip_mm),
+            quantile(precip95th$precip_mm, 0.75),
+            precip_sd = sd(precip95th$precip_mm)) %>% 
+    rename(percentile_75th = "quantile(precip95th$precip_mm, 0.75)") %>% 
+    mutate(source = "95th_Percentile")
+
+df_99th <- precip99th %>% 
+  summarise(precip_mean = mean(precip99th$precip_mm),
+            precip_med = median(precip99th$precip_mm),
+            quantile(precip99th$precip_mm, 0.75),
+            precip_sd = sd(precip99th$precip_mm)) %>% 
+    rename(percentile_75th = "quantile(precip99th$precip_mm, 0.75)") %>% 
+    mutate(source = "99th_Percentile")
+
+```
+
+```{r df winsorization}
+
+winsor_df <- bind_rows(df_90th, df_95th, df_99th) %>% 
+  relocate(source, .before = "precip_mean")
+
+```
+
+```{r table winsorization}
+
+winsor_table <- knitr::kable(winsor_df,
+                              col.names = c('Data Source', 
+                                            'Precipitation Mean', 
+                                            'Precipitation Median', 
+                                            '75th Percentile', 
+                                            'Precipitation Std Dev'),
+                              align = "lcccc",
+                              caption = "Columbia Climate Percipitation Summary") %>% 
+                        kable_material(c("striped"))
+
+
+winsor_table 
+```
+
+* Q2.7 The precipitation mean and standard deviation changed across the percentile levels. For each increase in percentile, you are including more precise data which influences the mean and the standard deviation. The standard deviation increases with each percentile demonstrating more variability in the data when there are more true data points, but the accuracy also increases. The median does not change when selecting for the three different percentiles as the center point of the data is not influenced. 
+
+
